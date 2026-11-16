@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Ring — Instant video calls!</title>
+<title>Ring — Instant video calls</title>
 
-<!-- Standard school-safe CDNs that are rarely blocked compared to esm.sh -->
+<!-- Standard school-safe script delivery that bypasses module blockers -->
 <script src="https://jsdelivr.net"></script>
 
 <style>
@@ -71,13 +71,13 @@
   </div>
 </section>
 <script>
-// Loaded globally via UMD script tag above
+// Insert your own project endpoints here to get past custom firewall blocks
 const supabaseClient = window.supabase.createClient(
-  "https://lovable.cloud",
-  "sb_publishable_qXeJVw2oux3RbVUWwpCEWA_4vK0NdQg"
+  "https://exsvwwxomovjstlhgjjy.supabase.co", 
+  "sb_publishable_UWbW4pD0R5et-sbuiAAcbw_ORYuwTPB"
 );
 
-// High-compatibility configuration to bypass strict P2P network architecture rules
+// Secure fallback TURN configuration to route streams through open ports
 const ICE = { 
   iceServers: [
     { urls: ["stun:://google.com", "stun:://google.com"] },
@@ -94,10 +94,13 @@ let session = null;
 
 const makeCode = () => Array.from({ length: 8 }, () => "abcdefghjkmnpqrstuvwxyz23456789"[Math.floor(Math.random() * 31)]).join("");
 const go = (code) => { location.hash = code ? "room=" + code : ""; };
-const roomFromHash = () => (location.hash.match(/room=([\w-]+)/) || [])[1];
+const roomFromHash = () => {
+  const match = location.hash.match(/room=([\w-]+)/);
+  return match ? match[1] : null;
+};
 
 $("start").onclick = () => go(makeCode());
-$("joinForm").onsubmit = (e) => { e.preventDefault(); const v = $("code").value.trim(); const c = (v.match(/room=([\w-]+)/) || [])[1] || v.split("/").pop(); if (c) go(c); };
+$("joinForm").onsubmit = (e) => { e.preventDefault(); const v = $("code").value.trim(); const match = v.match(/room=([\w-]+)/); const c = match ? match[1] : v.split("/").pop(); if (c) go(c); };
 $("logo").onclick = $("leave").onclick = () => go("");
 $("copy").onclick = async () => { await navigator.clipboard.writeText(location.href); $("copy").textContent = "Link copied!"; setTimeout(() => $("copy").textContent = "Copy invite link", 1500); };
 
