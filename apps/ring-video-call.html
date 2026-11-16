@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ring — Instant video calls</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+  :root { --bg:#0f1a15; --card:#17221c; --sec:#212e27; --acc:#2a3a31; --fg:#f2f5ec; --mut:#9fb0a5; --pri:#a6f05a; --prifg:#14251a; --red:#e5484d; --bd:#2c3b33; }
+  * { box-sizing:border-box; margin:0; }
+  body { background:var(--bg); color:var(--fg); font-family:"DM Sans",system-ui,sans-serif; height:100vh; }
+  h1,.disp { font-family:"Space Grotesk",system-ui,sans-serif; }
+  button,input { font:inherit; color:inherit; border:0; cursor:pointer; }
+  .hidden { display:none !important; }
+  #home { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .wrap { width:100%; max-width:520px; }
+  .pill { display:inline-flex; gap:8px; align-items:center; background:var(--sec); color:var(--mut); font-size:12px; padding:4px 12px; border-radius:99px; margin-bottom:24px; }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--pri); }
+  .pulse { animation:p 1.4s infinite; } @keyframes p { 50% { opacity:.3; } }
+  h1 { font-size:60px; line-height:1; letter-spacing:-.02em; }
+  .pri { color:var(--pri); }
+  .lead { color:var(--mut); margin-top:20px; }
+  .big { width:100%; margin-top:32px; padding:16px; border-radius:16px; background:var(--pri); color:var(--prifg); font-size:18px; font-weight:700; }
+  form { display:flex; gap:8px; margin-top:16px; }
+  input { flex:1; padding:12px 16px; border-radius:16px; background:var(--card); border:1px solid var(--bd); outline:none; cursor:text; }
+  .btn { padding:10px 20px; border-radius:99px; background:var(--sec); font-weight:500; }
+  .btn:hover { background:var(--acc); }
+  .danger { background:var(--red) !important; color:#fff; }
+  #room { position:relative; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+  header { display:flex; justify-content:space-between; align-items:center; padding:16px; gap:8px; }
+  .logo { font-size:20px; font-weight:700; background:none; }
+  .stage { flex:1; padding:0 16px 112px; }
+  .screen { position:relative; height:100%; border-radius:16px; overflow:hidden; background:var(--card); }
+  #remote { width:100%; height:100%; object-fit:cover; }
+  #waiting { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; text-align:center; }
+  #local { position:absolute; right:16px; bottom:16px; width:256px; aspect-ratio:16/9; object-fit:cover; border-radius:12px; border:2px solid var(--bd); background:var(--sec); transform:scaleX(-1); }
+  @media (max-width:640px) { #local { width:150px; } h1 { font-size:44px; } }
+  .controls { position:absolute; bottom:24px; left:50%; transform:translateX(-50%); display:flex; gap:12px; }
+  .controls .btn { padding:12px 22px; }
+</style>
+</head>
+<body>
+<section id="home">
+  <div class="wrap">
+    <div class="pill"><span class="dot pulse"></span> Peer-to-peer · no account</div>
+    <h1>Call anyone.<br /><span class="pri">Right now.</span></h1>
+    <p class="lead">Create a room, send the link to a friend, and see each other face to face.</p>
+    <button class="big" id="start">Start a new call</button>
+    <form id="joinForm"><input id="code" placeholder="Enter a room code or link" /><button class="btn">Join</button></form>
+  </div>
+</section>
+
+<section id="room" class="hidden">
+  <header>
+    <button class="logo disp" id="logo">Ring<span class="pri">.</span></button>
+    <div class="pill" style="margin:0;font-size:14px;color:var(--fg)"><span class="dot pulse" id="sdot" style="background:var(--mut)"></span><span id="status">Starting camera…</span></div>
+    <button class="btn" id="copy">Copy invite link</button>
+  </header>
+  <div class="stage"><div class="screen">
+    <video id="remote" autoplay playsinline></video>
+    <div id="waiting"><p class="disp" style="font-size:24px;font-weight:700">Room <span class="pri" id="roomId"></span></p><p style="color:var(--mut)">Share the invite link so someone can join.</p></div>
+    <video id="local" autoplay playsinline muted></video>
+  </div></div>
+  <div class="controls">
+    <button class="btn" id="mic">Mute</button>
+    <button class="btn" id="cam">Camera off</button>
+    <button class="btn danger" id="leave">Leave</button>
+  </div>
+</section>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+const supabase = createClient(
+  "https://c--6bc854ac-68a9-56ab-80ff-a6939104e0fb-prod.lovable.cloud",
+  "sb_publishable_qXeJVw2oux3RbVUWwpCEWA_4vK0NdQg"
+);
+const ICE = { iceServers: [{ urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] }] };
+const $ = (id) => document.getElementById(id);
+let session = null;
+
+const makeCode = () => Array.from({ length: 8 }, () => "abcdefghjkmnpqrstuvwxyz23456789"[Math.floor(Math.random() * 31)]).join("");
+const go = (code) => { location.hash = code ? "room=" + code : ""; };
+const roomFromHash = () => (location.hash.match(/room=([\w-]+)/) || [])[1];
+
+$("start").onclick = () => go(makeCode());
+$("joinForm").onsubmit = (e) => { e.preventDefault(); const v = $("code").value.trim(); const c = (v.match(/room=([\w-]+)/) || [])[1] || v.split("/").pop(); if (c) go(c); };
+$("logo").onclick = $("leave").onclick = () => go("");
+$("copy").onclick = async () => { await navigator.clipboard.writeText(location.href); $("copy").textContent = "Link copied!"; setTimeout(() => $("copy").textContent = "Copy invite link", 1500); };
+
+function setStatus(t, ok = false) {
+  $("status").textContent = t;
+  $("sdot").style.background = ok ? "var(--pri)" : "var(--mut)";
+  $("sdot").classList.toggle("pulse", !ok);
+  $("waiting").classList.toggle("hidden", ok);
+}
+
+async function joinRoom(id) {
+  $("home").classList.add("hidden"); $("room").classList.remove("hidden");
+  $("roomId").textContent = id; setStatus("Starting camera…");
+  const me = crypto.randomUUID();
+  let pc = null, peer = null, pendingIce = [], stream = null, closed = false;
+  const channel = supabase.channel("call:" + id, { config: { presence: { key: me }, broadcast: { self: false } } });
+  const send = (to, type, data) => channel.send({ type: "broadcast", event: "signal", payload: { from: me, to, type, data } });
+
+  const resetPeer = () => { pc?.close(); pc = null; peer = null; pendingIce = []; $("remote").srcObject = null; setStatus("Waiting for someone to join…"); };
+  const makePc = (other) => {
+    peer = other; pc = new RTCPeerConnection(ICE);
+    stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+    pc.onicecandidate = (e) => e.candidate && send(other, "ice", e.candidate.toJSON());
+    pc.ontrack = (e) => { $("remote").srcObject = e.streams[0] || null; };
+    pc.onconnectionstatechange = () => {
+      const s = pc?.connectionState;
+      if (s === "connected") setStatus("Connected", true);
+      else if (s === "connecting") setStatus("Connecting…");
+      else if (s === "failed" || s === "disconnected") setStatus("Connection lost");
+    };
+    return pc;
+  };
+  const flushIce = async () => { for (const c of pendingIce) await pc.addIceCandidate(c).catch(() => {}); pendingIce = []; };
+
+  channel
+    .on("broadcast", { event: "signal" }, async ({ payload: m }) => {
+      if (m.to !== me) return;
+      if (m.type === "offer") {
+        if (pc) resetPeer();
+        const p = makePc(m.from);
+        await p.setRemoteDescription(m.data); await flushIce();
+        const a = await p.createAnswer(); await p.setLocalDescription(a);
+        send(m.from, "answer", a);
+      } else if (m.type === "answer" && pc) {
+        await pc.setRemoteDescription(m.data); await flushIce();
+      } else if (m.type === "ice") {
+        if (pc?.remoteDescription) await pc.addIceCandidate(m.data).catch(() => {});
+        else pendingIce.push(m.data);
+      }
+    })
+    .on("presence", { event: "sync" }, async () => {
+      const others = Object.keys(channel.presenceState()).filter((k) => k !== me).sort();
+      if (peer && !others.includes(peer)) resetPeer();
+      if (others.length > 1 && !peer) setStatus("This room is full");
+      const other = others[0];
+      if (other && !pc && me < other) {
+        setStatus("Calling…");
+        const p = makePc(other);
+        const o = await p.createOffer(); await p.setLocalDescription(o);
+        send(other, "offer", o);
+      }
+    });
+
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+  } catch { setStatus("Camera/mic blocked — allow access and reload"); return null; }
+  $("local").srcObject = stream;
+  setStatus("Waiting for someone to join…");
+  channel.subscribe(async (s) => { if (s === "SUBSCRIBED") await channel.track({ at: Date.now() }); });
+
+  let mic = true, cam = true;
+  $("mic").onclick = () => { mic = !mic; stream.getAudioTracks().forEach((t) => t.enabled = mic); $("mic").textContent = mic ? "Mute" : "Unmute"; $("mic").classList.toggle("danger", !mic); };
+  $("cam").onclick = () => { cam = !cam; stream.getVideoTracks().forEach((t) => t.enabled = cam); $("cam").textContent = cam ? "Camera off" : "Camera on"; $("cam").classList.toggle("danger", !cam); };
+
+  return () => { pc?.close(); supabase.removeChannel(channel); stream?.getTracks().forEach((t) => t.stop()); };
+}
+
+async function route() {
+  if (session) { session(); session = null; }
+  const id = roomFromHash();
+  if (id) session = await joinRoom(id);
+  else { $("room").classList.add("hidden"); $("home").classList.remove("hidden"); }
+}
+window.addEventListener("hashchange", route);
+route();
+</script>
+</body>
+</html>
