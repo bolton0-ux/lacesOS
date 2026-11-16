@@ -4,12 +4,15 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Ring — Instant video calls</title>
-<link href="https://googleapis.com" rel="stylesheet" />
+
+<!-- Standard school-safe CDNs that are rarely blocked compared to esm.sh -->
+<script src="https://jsdelivr.net"></script>
+
 <style>
   :root { --bg:#0f1a15; --card:#17221c; --sec:#212e27; --acc:#2a3a31; --fg:#f2f5ec; --mut:#9fb0a5; --pri:#a6f05a; --prifg:#14251a; --red:#e5484d; --bd:#2c3b33; }
   * { box-sizing:border-box; margin:0; }
-  body { background:var(--bg); color:var(--fg); font-family:"DM Sans",system-ui,sans-serif; height:100vh; }
-  h1,.disp { font-family:"Space Grotesk",system-ui,sans-serif; }
+  body { background:var(--bg); color:var(--fg); font-family:system-ui,sans-serif; height:100vh; }
+  h1,.disp { font-weight: 700; }
   button,input { font:inherit; color:inherit; border:0; cursor:pointer; }
   .hidden { display:none !important; }
   #home { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
@@ -67,15 +70,14 @@
     <button class="btn danger" id="leave">Leave</button>
   </div>
 </section>
-
-<script type="module">
-import { createClient } from "https://esm.sh";
-const supabase = createClient(
+<script>
+// Loaded globally via UMD script tag above
+const supabaseClient = window.supabase.createClient(
   "https://lovable.cloud",
   "sb_publishable_qXeJVw2oux3RbVUWwpCEWA_4vK0NdQg"
 );
 
-// UPDATED: Added fallback TURN configuration to relay video over firewall-friendly Port 443 TCP
+// High-compatibility configuration to bypass strict P2P network architecture rules
 const ICE = { 
   iceServers: [
     { urls: ["stun:://google.com", "stun:://google.com"] },
@@ -111,7 +113,8 @@ async function joinRoom(id) {
   $("roomId").textContent = id; setStatus("Starting camera…");
   const me = crypto.randomUUID();
   let pc = null, peer = null, pendingIce = [], stream = null;
-  const channel = supabase.channel("call:" + id, { config: { presence: { key: me }, broadcast: { self: false } } });
+  
+  const channel = supabaseClient.channel("call:" + id, { config: { presence: { key: me }, broadcast: { self: false } } });
   const send = (to, type, data) => channel.send({ type: "broadcast", event: "signal", payload: { from: me, to, type, data } });
 
   const resetPeer = () => { pc?.close(); pc = null; peer = null; pendingIce = []; $("remote").srcObject = null; setStatus("Waiting for someone to join…"); };
@@ -136,14 +139,14 @@ async function joinRoom(id) {
       if (m.type === "offer") {
         if (pc) resetPeer();
         const p = makePc(m.from);
-        await p.setRemoteDescription(m.data); await flushIce();
+        await p.setRemoteDescription(new RTCSessionDescription(m.data)); await flushIce();
         const a = await p.createAnswer(); await p.setLocalDescription(a);
         send(m.from, "answer", a);
       } else if (m.type === "answer" && pc) {
-        await pc.setRemoteDescription(m.data); await flushIce();
+        await pc.setRemoteDescription(new RTCSessionDescription(m.data)); await flushIce();
       } else if (m.type === "ice") {
-        if (pc?.remoteDescription) await pc.addIceCandidate(m.data).catch(() => {});
-        else pendingIce.push(m.data);
+        if (pc?.remoteDescription) await pc.addIceCandidate(new RTCIceCandidate(m.data)).catch(() => {});
+        else pendingIce.push(new RTCIceCandidate(m.data));
       }
     })
     .on("presence", { event: "sync" }, async () => {
@@ -170,7 +173,7 @@ async function joinRoom(id) {
   $("mic").onclick = () => { mic = !mic; stream.getAudioTracks().forEach((t) => t.enabled = mic); $("mic").textContent = mic ? "Mute" : "Unmute"; $("mic").classList.toggle("danger", !mic); };
   $("cam").onclick = () => { cam = !cam; stream.getVideoTracks().forEach((t) => t.enabled = cam); $("cam").textContent = cam ? "Camera off" : "Camera on"; $("cam").classList.toggle("danger", !cam); };
 
-  return () => { pc?.close(); supabase.removeChannel(channel); stream?.getTracks().forEach((t) => t.stop()); };
+  return () => { pc?.close(); supabaseClient.removeChannel(channel); stream?.getTracks().forEach((t) => t.stop()); };
 }
 
 async function route() {
