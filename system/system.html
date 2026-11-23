@@ -10,7 +10,7 @@
 
 <style>
 @import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap");
-:root{color-scheme:dark;--bg:#090a0f;--surface:rgba(22,23,30,.82);--surface2:rgba(30,31,39,.94);--line:rgba(255,255,255,.13);--text:#f4f3f0;--muted:#a0a1aa;--accent:#f5d84b;--accent2:#ffb75e;--shadow:0 24px 80px rgba(0,0,0,.42);--border:var(--line);--border2:rgba(255,255,255,.22);--card:var(--surface);--modal:var(--surface2);--input:rgba(7,8,12,.72);--hover:var(--surface2)}
+:root{--app-window-width:1040px;--app-window-height:88vh;color-scheme:dark;--bg:#090a0f;--surface:rgba(22,23,30,.82);--surface2:rgba(30,31,39,.94);--line:rgba(255,255,255,.13);--text:#f4f3f0;--muted:#a0a1aa;--accent:#f5d84b;--accent2:#ffb75e;--shadow:0 24px 80px rgba(0,0,0,.42);--border:var(--line);--border2:rgba(255,255,255,.22);--card:var(--surface);--modal:var(--surface2);--input:rgba(7,8,12,.72);--hover:var(--surface2)}
 :root[data-theme="light"]{color-scheme:light;--bg:#f3f1eb;--surface:rgba(255,255,255,.78);--surface2:rgba(255,255,255,.96);--line:rgba(30,30,35,.13);--text:#24252b;--muted:#6f717a;--shadow:0 24px 70px rgba(30,30,40,.14)}
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;min-height:100%;font-family:"Geist",Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
@@ -76,7 +76,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .app-launch-tab:hover{background:var(--surface2);border-color:color-mix(in srgb,var(--accent) 65%,var(--line));color:var(--text);transform:translateY(-1px)}
 .app-launch-tab:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 #appView{position:fixed;inset:0;z-index:20;background:rgba(4,5,8,.48);backdrop-filter:blur(12px);display:grid;place-items:center;padding:20px;animation:fade .18s ease}
-#appPanel{width:min(680px,100%);max-height:min(78vh,700px);overflow:auto;border:1px solid var(--line);border-radius:22px;background:var(--surface2);box-shadow:var(--shadow);padding:24px}
+#appPanel{width:min(var(--app-window-width,1040px),100%);height:min(var(--app-window-height,88vh),calc(100vh - 40px));max-height:calc(100vh - 40px);overflow:auto;border:1px solid var(--line);border-radius:22px;background:var(--surface2);box-shadow:var(--shadow);padding:24px}
 .panel-head{display:flex;align-items:center;gap:12px;margin-bottom:20px}
 .panel-head .app-icon{width:40px;height:40px;border-radius:13px;font-size:18px}
 .panel-head h2{font-size:19px;font-weight:550;letter-spacing:-.04em;margin:0}
@@ -89,7 +89,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .setting-row small{display:block;color:var(--muted);font-size:10px;margin-top:4px}
 .empty-state{min-height:170px;display:grid;place-items:center;text-align:center;color:var(--muted)}
 .empty-state strong{display:block;color:var(--text);font-size:14px;margin-bottom:6px}
-#appFrame{display:block;width:100%;height:min(62vh,560px);border:0;border-radius:12px;background:transparent}
+#appFrame{display:block;width:100%;height:calc(min(var(--app-window-height,88vh),100vh - 40px) - 116px);min-height:320px;border:0;border-radius:12px;background:transparent}
 #loading{position:fixed;inset:0;z-index:9999;background:rgba(9,10,15,.94);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(10px)}
 .spinner{width:28px;height:28px;border:2px solid rgba(255,255,255,.14);border-top-color:var(--accent);border-radius:50%;animation:spin .75s linear infinite}
 html.auth-checking #loginScreen{display:none!important}
@@ -109,7 +109,9 @@ html.auth-checking #loading{display:flex!important}
 .settings-page textarea{width:100%;min-height:180px;resize:vertical;padding:12px;border-radius:9px;border:1px solid var(--border);background:var(--input);color:var(--text);font:12px "Geist Mono",monospace}
 .field{margin:15px 0}
 .field label{display:block;font-size:13px;font-weight:700;margin-bottom:7px;color:var(--muted)}
-.field input,.field select{width:100%;padding:11px 12px;border-radius:9px;border:1px solid var(--border);background:var(--input);color:var(--text)}
+.field input:not([type="range"]),.field select{width:100%;padding:11px 12px;border-radius:9px;border:1px solid var(--border);background:var(--input);color:var(--text)}
+.field input[type="range"]{width:100%;accent-color:var(--accent);padding:7px 0}
+.range-meta{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:12px;color:var(--muted)}.range-meta output{font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}
 .actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
 .actions button{border:1px solid var(--border);border-radius:9px;padding:10px 14px;background:var(--card);color:var(--text)}
 .actions .save{background:var(--accent);border-color:var(--accent);color:#29240e}
@@ -147,7 +149,7 @@ html.auth-checking #loading{display:flex!important}
 #terminalForm{display:flex;gap:0;padding:6px 14px 14px;align-items:center;flex-shrink:0}
 #terminalPrompt{color:#f2f2f2;white-space:pre}
 #terminalInput{flex:1;min-width:0;background:transparent;color:#f2f2f2;border:0;outline:0;font:inherit;caret-color:#fff}
-@media(max-width:760px){.app-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.app-card{min-height:136px;padding:17px 50px 17px 14px}.app-main{padding-top:48px}.user-chip{max-width:120px}.settings-layout{grid-template-columns:1fr;gap:12px}.settings-nav{border-right:0;border-bottom:1px solid var(--border);padding:0 0 10px;display:flex;overflow:auto}.settings-nav button{min-width:max-content;width:auto}.settings-two{grid-template-columns:1fr}#adminPanelBack{padding:8px}#adminPanel{height:94vh;border-radius:13px}#adminPanelHead{padding:14px}#adminPanelBody{padding:14px}}
+@media(max-width:760px){#appView{padding:8px}#appPanel{width:100%;height:calc(100vh - 16px);max-height:calc(100vh - 16px);padding:16px;border-radius:16px}#appFrame{height:calc(100vh - 150px);min-height:240px}.app-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.app-card{min-height:136px;padding:17px 50px 17px 14px}.app-main{padding-top:48px}.user-chip{max-width:120px}.settings-layout{grid-template-columns:1fr;gap:12px}.settings-nav{border-right:0;border-bottom:1px solid var(--border);padding:0 0 10px;display:flex;overflow:auto}.settings-nav button{min-width:max-content;width:auto}.settings-two{grid-template-columns:1fr}#adminPanelBack{padding:8px}#adminPanel{height:94vh;border-radius:13px}#adminPanelHead{padding:14px}#adminPanelBody{padding:14px}}
 @media(max-width:520px){.top-right{gap:5px}.top-action{padding:7px 9px;font-size:11px}.user-chip{max-width:110px}.login-card{padding:39px 24px 29px}.app-grid{gap:9px}.app-card{min-height:126px}.app-icon{width:43px;height:43px}#terminal{height:82vh;font-size:13px}#terminalHead{font-size:12px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
@@ -220,6 +222,7 @@ html.auth-checking #loading{display:flex!important}
       <nav class="settings-nav" aria-label="Settings categories">
         <button type="button" class="active" data-settings-page="general">⚙ General</button>
         <button type="button" data-settings-page="appearance">🎨 Appearance</button>
+        <button type="button" data-settings-page="windows">▣ Windows</button>
         <button type="button" data-settings-page="theme-editor">✎ Theme editor</button>
       </nav>
       <div>
@@ -233,6 +236,13 @@ html.auth-checking #loading{display:flex!important}
           <div class="field"><label for="theme">Active theme</label><select id="theme"><option value="dark">Dark</option><option value="light">Light</option><option value="system">System default</option></select></div>
           <div class="field"><label for="accentOverride">Accent color override</label><input id="accentOverride" type="color" value="#5865f2"></div>
           <p class="settings-help">Your saved custom themes appear in the selector above.</p>
+        </section>
+        <section class="settings-page" data-page="windows">
+          <h3>App windows</h3>
+          <p class="settings-help">Set the default size of apps opened inside LacesOS. You can still use the pop-out arrow to open an app in its own tab.</p>
+          <div class="field"><label for="windowWidth">Window width</label><div class="range-meta"><span>Compact</span><output id="windowWidthValue" for="windowWidth">1040 px</output><span>Wide</span></div><input id="windowWidth" type="range" min="720" max="1440" step="20" value="1040"></div>
+          <div class="field"><label for="windowHeight">Window height</label><div class="range-meta"><span>65% screen</span><output id="windowHeightValue" for="windowHeight">88%</output><span>94% screen</span></div><input id="windowHeight" type="range" min="65" max="94" step="1" value="88"></div>
+          <p class="settings-help">Changes are previewed immediately and saved when you press Save settings.</p>
         </section>
         <section class="settings-page" data-page="theme-editor">
           <h3>Theme editor</h3><p class="settings-help">Create a local theme preset by editing its JSON. Theme values are data only; scripts are not allowed. Use hex colors and CSS gradients for color fields.</p>
@@ -506,17 +516,38 @@ function openSettings(){
   document.getElementById("settingsUsername").textContent=localStorage.getItem(USERNAME_KEY)||"Not set";
   theme.value=s.theme||"dark";
   document.getElementById("accentOverride").value=s.accentOverride||"#5865f2";
+  document.getElementById("windowWidth").value=String(Math.min(1440,Math.max(720,Number(s.windowWidth)||1040)));
+  document.getElementById("windowHeight").value=String(Math.min(94,Math.max(65,Number(s.windowHeight)||88)));
+  updateWindowSizePreview();
   modalBack.style.display="flex";
   tabName.focus();
 }
+function applyWindowSettings(settings=getSettings()){
+  const width=Math.min(1440,Math.max(720,Number(settings.windowWidth)||1040));
+  const height=Math.min(94,Math.max(65,Number(settings.windowHeight)||88));
+  document.documentElement.style.setProperty("--app-window-width",width+"px");
+  document.documentElement.style.setProperty("--app-window-height",height+"vh");
+}
+function updateWindowSizePreview(){
+  const width=document.getElementById("windowWidth");
+  const height=document.getElementById("windowHeight");
+  document.getElementById("windowWidthValue").textContent=width.value+" px";
+  document.getElementById("windowHeightValue").textContent=height.value+"%";
+  applyWindowSettings({windowWidth:width.value,windowHeight:height.value});
+}
+document.getElementById("windowWidth").addEventListener("input",updateWindowSizePreview);
+document.getElementById("windowHeight").addEventListener("input",updateWindowSizePreview);
+applyWindowSettings();
 document.getElementById("topSettingsBtn").addEventListener("click",openSettings);
 
+function cancelWindowSizePreview(){applyWindowSettings(getSettings());}
 document.getElementById("cancelSettings").onclick=()=>{
+  cancelWindowSizePreview();
   modalBack.style.display="none";
 };
 
 modalBack.onclick=e=>{
-  if(e.target===modalBack) modalBack.style.display="none";
+  if(e.target===modalBack){cancelWindowSizePreview();modalBack.style.display="none";}
 };
 
 document.getElementById("saveSettings").onclick=()=>{
@@ -525,8 +556,11 @@ document.getElementById("saveSettings").onclick=()=>{
     iconUrl:iconUrl.value.trim(),
     theme:theme.value,
     accentOverride:document.getElementById("accentOverride").value,
+    windowWidth:Number(document.getElementById("windowWidth").value),
+    windowHeight:Number(document.getElementById("windowHeight").value),
   });
 
+  applyWindowSettings();
   refreshThemeOptions();
   applySettings();
   modalBack.style.display="none";
