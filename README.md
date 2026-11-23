@@ -1,6 +1,8 @@
 # lacesOS
 
-A downloadable launcher.html connects to system.html, which retrieves app data and launches via jsDelivr. (*AI vibe coded project*)
+A downloadable launcher.html connects to system.html, which retrieves app data and launches via jsDelivr. 
+
+(*AI vibe coded project*)
 
 ## ...
 
